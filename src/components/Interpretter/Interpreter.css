@@ -54,4 +54,13 @@ textarea {
   text-decoration: none;
   cursor: pointer;
 }
+
+#map {
+  margin-top: 0;
+  font-family: monospace;
+  text-align: start;
+  border: 1px solid black;
+  width: 50%;
+  height: 100px;
+}
 /*# sourceMappingURL=Interpreter.css.map */

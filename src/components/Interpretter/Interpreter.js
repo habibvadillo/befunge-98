@@ -3,15 +3,17 @@ import "./Interpreter.css";
 
 function Interpreter() {
   const [input, updateInput] = useState("");
-  const [stackState, updateStack] = useState();
+  const [stackState, updateStack] = useState([]);
   const [outputState, updateOutput] = useState("");
   const [interpreter, updateInterpreter] = useState();
-  const [speed, updateSpeed] = useState(0.1);
+  const [speed, updateSpeed] = useState(0);
   const [running, updateRunning] = useState(false);
   const [errorState, updateError] = useState({
     error: false,
     message: "There is an error",
   });
+
+  let b98Int;
 
   useEffect(() => {
     if (errorState.error) {
@@ -22,7 +24,6 @@ function Interpreter() {
   });
 
   const interpret = (code) => {
-    console.log(code);
     let output = "";
     let stack = [];
     let co = code.split("\n");
@@ -200,12 +201,55 @@ function Interpreter() {
           break;
       }
     };
-    const b98Int = setInterval(() => {
-      if (p[y][x] === "@") {
-        updateOutput(output);
-        updateRunning(false);
-        clearInterval(b98Int);
-      } else {
+    if (speed) {
+      b98Int = setInterval(() => {
+        updateInput(p[y][x]);
+        let highlighted = p
+          .map((elem, i) => {
+            return elem
+              .split("")
+              .map((char, j) => {
+                if (char === " ") {
+                  char = "&nbsp;";
+                }
+                if (i === y && j === x) {
+                  return `<mark>${char}</mark>`;
+                } else {
+                  return char;
+                }
+              })
+              .join("");
+          })
+          .join("<br>");
+        document.querySelector("#map").innerHTML = highlighted;
+        updateRunning(true);
+        if (p[y][x] === "@") {
+          updateOutput(output);
+          updateRunning(false);
+          clearInterval(b98Int);
+        } else {
+          if (lm % 2) {
+            switch (p[y][x]) {
+              case '"':
+                lm++;
+                move();
+                break;
+              default:
+                stack.push(p[y][x].charCodeAt(0));
+                move();
+                break;
+            }
+          } else {
+            funcswi(p[y][x]);
+          }
+          if (output) {
+            updateOutput(output);
+          }
+        }
+        updateStack(stack);
+      }, speed * 1000);
+    } else {
+      while (p[y][x] !== "@") {
         if (lm % 2) {
           switch (p[y][x]) {
             case '"':
@@ -220,31 +264,13 @@ function Interpreter() {
         } else {
           funcswi(p[y][x]);
         }
-        updateOutput(output);
       }
-      updateStack(stack);
-      updateInput(p[y][x]);
-    }, speed * 1000);
-    // while (p[y][x] !== "@") {
-    //   if (lm % 2) {
-    //     switch (p[y][x]) {
-    //       case '"':
-    //         lm++;
-    //         move();
-    //         break;
-    //       default:
-    //         stack.push(p[y][x].charCodeAt(0));
-    //         move();
-    //         break;
-    //     }
-    //   } else {
-    //     funcswi(p[y][x]);
-    //   }
-    // }
-    // return output;
+      return output;
+    }
   };
 
   const Execute = () => {
+    updateOutput("");
     if (interpreter === undefined) {
       updateError({
         error: true,
@@ -256,7 +282,6 @@ function Interpreter() {
         message: "Wait for it to finish man!",
       });
     } else {
-      updateRunning(true);
       updateOutput(interpret(interpreter));
     }
   };
@@ -319,12 +344,31 @@ function Interpreter() {
         name="interpreter"
         value={interpreter}
       ></textarea>
-      <button onClick={Execute}>Run</button>
+      <p>Map</p>
+      <p id="map"></p>
+      <div id="buttons">
+        <select
+          onChange={(e) => {
+            updateSpeed(e.target.value);
+          }}
+        >
+          <option value="">Instant</option>
+          <option value={1}>Slow</option>
+          <option value={0.1}>Fast</option>
+        </select>
+        <button onClick={Execute}>Run</button>
+        <button onClick={() => window.location.reload()}>Stop</button>
+      </div>
       <p>Input:</p>
       <input readOnly value={input}></input>
       <p>Stack:</p>
-      <input readOnly value={JSON.stringify(stackState)}></input>
-      <p>{`Output: ${outputState}`}</p>
+      <input readOnly value={JSON.stringify(stackState.map((n) => +n))}></input>
+      <p>Output:</p>
+      {outputState ? (
+        <input readOnly value={outputState}></input>
+      ) : (
+        <input readOnly value=""></input>
+      )}
     </>
   );
 }
